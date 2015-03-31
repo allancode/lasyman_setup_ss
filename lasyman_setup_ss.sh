@@ -189,7 +189,7 @@ function mysql_op()
 ## configure firewall
 function setup_firewall()
 {
-	for port in 443 80 `seq 50000 60000`
+	for port in `seq 50000 60000`
 	do
 		iptables -I INPUT -p tcp --dport $port -j ACCEPT
 	done
@@ -219,8 +219,13 @@ function setup_manyuser_ss()
 		 CREATED=1
 	fi
 	#import shadowsocks sql
+	cd /root
+	git clone https://github.com/allancode/sqlbak.git
+	cd sqlbak
+	tar -zxvf sqlbak.tar.gz
+	tar -zxvf ss-panel.tar.gz
 	echo -e "import shadowsocks sql..."
-	import_db_sql="source ${SS_ROOT}/shadowsocks.sql"
+	import_db_sql="source /root/sqlbak/shadowsocks.sql"
 	mysql_op "${import_db_sql}"
 }
 
@@ -229,22 +234,7 @@ function setup_sspanel()
 {
 	PANEL_ROOT=/root/ss-panel
 	echo -e "download ss-panel ...\n"
-	cd /root
-	git clone https://github.com/orvice/ss-panel.git
-	#import pannel sql
-	for mysql in ${SQL_FILES}
-	do
-		import_panel_sql="source ${PANEL_ROOT}/sql/${mysql}"
-		mysql_op "${import_panel_sql}"
-	done
-	#modify config
-	echo -e "modify lib/config-simple.php...\n"
-	if [ -f "${PANEL_ROOT}/lib/config-simple.php" ];then
-		mv ${PANEL_ROOT}/lib/config-simple.php ${PANEL_ROOT}/lib/config.php
-	fi
-	sed -i "/DB_PWD/ s#'password'#'${ROOT_PASSWD}'#" ${PANEL_ROOT}/lib/config.php
-	sed -i "/DB_DBNAME/ s#'db'#'${DB_NAME}'#" ${PANEL_ROOT}/lib/config.php
-	cp -rd ${PANEL_ROOT}/* /var/www/html/
+	cp -rd /root/sqlbak/ss-panel/* /var/www/html/
 	rm -rf /var/www/html/index.html
 }
 
